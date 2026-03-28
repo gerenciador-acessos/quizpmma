@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz PM/MA — Operação Aprovação</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:#1a3a6e;--red-dark:#0d2244;--red-light:#2a5aaa;
+    --gold:#f5c518;--gold-dark:#c9a000;
+    --blue-bg:#060d1a;--blue-mid:#0a1628;--blue-light:#0d2244;
+    --white:#ffffff;--correct:#27ae60;--wrong:#e74c3c;
+    --option-bg:linear-gradient(135deg,#0d2244 0%,#1a3a6e 50%,#0a1e50 100%);
+    --option-hover:linear-gradient(135deg,#1a3a8e 0%,#2a5aaa 50%,#1a3a7e 100%);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Oswald',sans-serif;background:var(--blue-bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow-x:hidden;position:relative;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(26,58,110,.4) 0%,transparent 60%),radial-gradient(ellipse at 80% 50%,rgba(26,58,110,.4) 0%,transparent 60%),linear-gradient(180deg,#0a1628 0%,#0d1f3c 50%,#0a1628 100%);z-index:-2;}
+  body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 4px);z-index:-1;pointer-events:none;}
+  .screen{display:none;width:100%;max-width:920px;padding:16px;}
+  .screen.active{display:flex;flex-direction:column;align-items:center;}
+  /* START */
+  #start-screen{text-align:center;gap:24px;}
+  .logo-main{font-size:52px;font-weight:700;color:var(--gold);text-shadow:0 0 30px rgba(245,197,24,.8),3px 3px 0 #7a5f00;letter-spacing:3px;text-transform:uppercase;line-height:1;animation:pulse-glow 2s ease-in-out infinite;}
+  .logo-sub{font-size:22px;color:#fff;letter-spacing:8px;margin-top:-5px;text-shadow:0 0 15px rgba(255,255,255,.5);}
+  @keyframes pulse-glow{0%,100%{text-shadow:0 0 30px rgba(245,197,24,.8),3px 3px 0 #7a5f00}50%{text-shadow:0 0 60px rgba(245,197,24,1),3px 3px 0 #7a5f00,0 0 100px rgba(245,197,24,.4)}}
+  .coin-icon{font-size:80px;animation:shield-pulse 2.5s ease-in-out infinite;display:block;margin:0 auto;filter:drop-shadow(0 0 20px rgba(245,197,24,.8));}
+  @keyframes shield-pulse{0%,100%{transform:scale(1);filter:drop-shadow(0 0 20px rgba(245,197,24,.8))}50%{transform:scale(1.08);filter:drop-shadow(0 0 36px rgba(245,197,24,1))}}
+  .difficulty-selector{background:rgba(255,255,255,.05);border:2px solid var(--gold);border-radius:12px;padding:22px 36px;width:100%;max-width:500px;}
+  .difficulty-selector h3{color:var(--gold);font-size:18px;margin-bottom:14px;letter-spacing:2px;}
+  .diff-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .diff-btn{padding:10px 20px;border:2px solid;border-radius:8px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:1px;}
+  .diff-btn[data-diff="facil"]{border-color:#27ae60;color:#27ae60;background:rgba(39,174,96,.1);}
+  .diff-btn[data-diff="medio"]{border-color:var(--gold);color:var(--gold);background:rgba(245,197,24,.1);}
+  .diff-btn[data-diff="dificil"]{border-color:#e74c3c;color:#e74c3c;background:rgba(231,76,60,.1);}
+  .diff-btn[data-diff="todos"]{border-color:#9b59b6;color:#9b59b6;background:rgba(155,89,182,.1);}
+  .diff-btn.selected{color:#fff!important;}
+  .diff-btn[data-diff="facil"].selected{background:#27ae60;}
+  .diff-btn[data-diff="medio"].selected{background:var(--gold-dark);color:#000!important;}
+  .diff-btn[data-diff="dificil"].selected{background:#e74c3c;}
+  .diff-btn[data-diff="todos"].selected{background:#9b59b6;}
+  .start-btn{background:linear-gradient(135deg,var(--gold-dark),var(--gold),var(--gold-dark));color:#1a0000;border:none;padding:16px 56px;font-family:'Oswald',sans-serif;font-size:24px;font-weight:700;letter-spacing:3px;border-radius:50px;cursor:pointer;text-transform:uppercase;box-shadow:0 8px 30px rgba(245,197,24,.5);transition:all .2s;animation:btn-pulse 2s ease-in-out infinite;}
+  .start-btn:hover{transform:scale(1.05);box-shadow:0 12px 40px rgba(245,197,24,.7);}
+  @keyframes btn-pulse{0%,100%{box-shadow:0 8px 30px rgba(245,197,24,.5)}50%{box-shadow:0 8px 50px rgba(245,197,24,.9)}}
+  .stats-box{display:flex;gap:28px;color:rgba(255,255,255,.7);font-size:13px;letter-spacing:1px;}
+  .stats-box span{color:var(--gold);font-weight:700;font-size:20px;}
+  /* GAME */
+  #game-screen{gap:10px;}
+  .top-bar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:6px 0;}
+  .level-badge{background:linear-gradient(135deg,var(--red-dark),var(--red));border:2px solid var(--gold);border-radius:8px;padding:7px 16px;text-align:center;}
+  .level-badge .level-label{font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px;}
+  .level-badge .level-num{font-size:22px;font-weight:700;color:var(--gold);line-height:1;}
+  .score-display{background:linear-gradient(135deg,#0d2244,#1a3a6e);border:2px solid var(--gold);border-radius:8px;padding:7px 16px;text-align:center;}
+  .score-display .score-label{font-size:10px;color:rgba(255,255,255,.7);letter-spacing:2px;}
+  .score-display .score-num{font-size:22px;font-weight:700;color:var(--gold);line-height:1;}
+  .game-logo{font-size:17px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+  .diff-indicator{display:flex;gap:5px;align-items:center;}
+  .diff-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2);}
+  .diff-dot.active{background:var(--gold);box-shadow:0 0 6px var(--gold);}
+  .diff-dot.active.med{background:#f39c12;}
+  .diff-dot.active.hard{background:#e74c3c;}
+  /* Timer */
+  .timer-container{width:100%;display:flex;align-items:center;gap:6px;}
+  .timer-circle{position:relative;width:86px;height:86px;flex-shrink:0;}
+  .timer-circle svg{position:absolute;top:0;left:0;transform:rotate(-90deg);}
+  .timer-circle .bg-c{fill:none;stroke:rgba(255,255,255,.1);stroke-width:6;}
+  .timer-circle .prog-c{fill:none;stroke:var(--gold);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .5s;}
+  .timer-number{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--gold);transition:color .5s;}
+  .timer-bar-wrapper{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.15);}
+  .timer-bar{height:100%;background:linear-gradient(90deg,#27ae60,var(--gold),#e74c3c);border-radius:4px;transition:width 1s linear;width:100%;}
+  /* Question */
+  .question-box{width:100%;background:linear-gradient(135deg,rgba(139,0,0,.88),rgba(180,20,20,.88),rgba(120,0,0,.88));border:3px solid rgba(255,255,255,.15);border-radius:12px;padding:20px 26px;position:relative;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.15);}
+  .question-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+  .question-number{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:3px;margin-bottom:6px;text-transform:uppercase;}
+  .question-text{font-size:20px;font-weight:600;color:#fff;line-height:1.4;text-shadow:1px 1px 3px rgba(0,0,0,.5);text-transform:uppercase;letter-spacing:.5px;}
+  /* Options */
+  .options-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .option-btn{display:flex;align-items:center;gap:12px;background:var(--option-bg);border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:14px 18px;cursor:pointer;transition:all .2s;text-align:left;position:relative;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15);}
+  .option-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1) 0%,transparent 50%);pointer-events:none;}
+  .option-btn:not(:disabled):not(.eliminated):hover{background:var(--option-hover);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.4),0 0 15px rgba(245,197,24,.3);}
+  .option-btn:focus{outline:none;}
+  @media (hover:none) and (pointer:coarse){
+    .option-btn:not(:disabled):not(.eliminated):hover{background:var(--option-bg);border-color:rgba(255,255,255,.15);transform:none;box-shadow:0 4px 15px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.15);}
+  }
+  .option-btn:disabled{cursor:not-allowed;}
+  .option-btn.eliminated{opacity:.18;pointer-events:none;filter:grayscale(1) blur(1px);transform:scale(.97);}
+  .option-num{width:34px;height:34px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0;}
+  .option-text{font-size:15px;font-weight:600;color:#fff;text-transform:uppercase;letter-spacing:.5px;line-height:1.3;text-shadow:1px 1px 2px rgba(0,0,0,.5);}
+  .option-btn.correct{background:linear-gradient(135deg,#1a6b35,#27ae60,#1a6b35)!important;border-color:#2ecc71!important;box-shadow:0 0 30px rgba(39,174,96,.6)!important;animation:correct-flash .5s ease;}
+  .option-btn.wrong{background:linear-gradient(135deg,#7b1515,#e74c3c,#7b1515)!important;border-color:#ff6b6b!important;animation:shake .5s ease;}
+  @keyframes correct-flash{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  /* LIFELINES */
+  .lifelines-row{width:100%;display:flex;gap:10px;justify-content:center;}
+  .lifeline-btn{display:flex;flex-direction:column;align-items:center;gap:4px;background:linear-gradient(135deg,#0d2244,#1a3a6e);border:2px solid var(--gold);border-radius:14px;padding:11px 18px;cursor:pointer;transition:all .25s;min-width:92px;position:relative;overflow:hidden;}
+  .lifeline-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,197,24,.1) 0%,transparent 60%);pointer-events:none;}
+  .lifeline-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 8px 24px rgba(245,197,24,.35),0 0 20px rgba(245,197,24,.2);border-color:#fff;}
+  .lifeline-btn.used{opacity:.22;cursor:not-allowed;filter:grayscale(1);border-color:rgba(255,255,255,.15);pointer-events:none;}
+  .lifeline-btn.used::after{content:'USADO';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,100,100,.8);font-weight:700;letter-spacing:2px;background:rgba(0,0,0,.4);}
+  .ll-icon{font-size:24px;line-height:1;}
+  .ll-label{font-size:10px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-align:center;text-transform:uppercase;}
+  .ll-desc{font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.5px;text-align:center;}
+  /* Hint popup */
+  .hint-popup,.skip-popup{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:990;animation:fadein .25s ease;}
+  .hint-box{background:linear-gradient(135deg,#0a1e3c,#1a4a8e);border:3px solid var(--gold);border-radius:20px;padding:36px 44px;max-width:480px;width:92%;text-align:center;box-shadow:0 0 60px rgba(245,197,24,.25);position:relative;}
+  .hint-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);border-radius:20px 20px 0 0;}
+  .hint-icon{font-size:52px;margin-bottom:10px;}
+  .hint-title{font-size:22px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:14px;}
+  .hint-text{font-size:17px;color:#fff;line-height:1.65;background:rgba(255,255,255,.07);border-radius:10px;padding:16px 20px;border-left:4px solid var(--gold);text-align:left;}
+  .hint-close{margin-top:20px;background:var(--gold);color:#1a0000;border:none;padding:11px 32px;font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;border-radius:30px;cursor:pointer;transition:all .2s;}
+  .hint-close:hover{transform:scale(1.04);box-shadow:0 5px 18px rgba(245,197,24,.5);}
+  .skip-box{background:linear-gradient(135deg,#0a1e3c,#1a2a6e);border:3px solid #9b59b6;border-radius:20px;padding:34px 42px;max-width:440px;width:92%;text-align:center;box-shadow:0 0 50px rgba(155,89,182,.25);}
+  .skip-icon{font-size:50px;margin-bottom:10px;}
+  .skip-title{font-size:22px;font-weight:700;color:#b87fe8;letter-spacing:2px;margin-bottom:8px;}
+  .skip-sub{font-size:14px;color:rgba(255,255,255,.6);letter-spacing:1px;margin-bottom:22px;}
+  .skip-actions{display:flex;gap:12px;justify-content:center;}
+  .skip-yes{background:#9b59b6;color:#fff;border:none;padding:12px 28px;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;border-radius:30px;cursor:pointer;transition:all .2s;}
+  .skip-yes:hover{background:#8e44ad;transform:scale(1.04);}
+  .skip-no{background:transparent;color:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.3);padding:12px 28px;font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;border-radius:30px;cursor:pointer;transition:all .2s;}
+  .skip-no:hover{border-color:#fff;color:#fff;}
+  /* Bottom */
+  .bottom-info{width:100%;display:flex;gap:9px;justify-content:center;}
+  .info-pill{padding:9px 18px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:center;min-width:90px;}
+  .pill-errar{background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);}
+  .pill-parar{background:rgba(245,197,24,.15);border:2px solid var(--gold);color:var(--gold);cursor:pointer;transition:all .2s;}
+  .pill-parar:hover{background:var(--gold);color:#000;}
+  .pill-acertar{background:rgba(39,174,96,.15);border:2px solid #27ae60;color:#27ae60;}
+  /* Streak */
+  .streak-bar{width:100%;display:flex;align-items:center;gap:10px;justify-content:center;}
+  .streak-label{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:2px;}
+  .sdot{width:11px;height:11px;border-radius:2px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);transition:all .3s;}
+  .sdot.lit{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px var(--gold);}
+  /* Progress */
+  .progress-container{width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:2px;transition:width .5s ease;}
+  /* RESULT */
+  #result-screen{text-align:center;gap:18px;}
+  .result-icon{font-size:76px;animation:bounce .6s ease;}
+  @keyframes bounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+  .result-title{font-size:40px;font-weight:700;color:var(--gold);text-shadow:0 0 30px rgba(245,197,24,.5);}
+  .result-subtitle{font-size:17px;color:rgba(255,255,255,.7);letter-spacing:2px;}
+  .result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:500px;}
+  .result-stat{background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;}
+  .result-stat .rs-num{font-size:30px;font-weight:700;color:var(--gold);}
+  .result-stat .rs-label{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:2px;text-transform:uppercase;}
+  .result-answer-box{background:rgba(39,174,96,.15);border:2px solid #27ae60;border-radius:10px;padding:14px 22px;max-width:500px;width:100%;}
+  .result-answer-box.wrong-box{background:rgba(231,76,60,.15);border-color:#e74c3c;}
+  .rab-label{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:2px;margin-bottom:4px;}
+  .rab-text{font-size:17px;font-weight:700;color:#fff;}
+  .action-buttons{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+  .action-btn{padding:13px 32px;border-radius:50px;font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-next{background:var(--gold);color:#1a0000;border:none;box-shadow:0 5px 20px rgba(245,197,24,.4);}
+  .btn-next:hover{transform:scale(1.05);box-shadow:0 8px 30px rgba(245,197,24,.6);}
+  .btn-restart{background:transparent;color:rgba(255,255,255,.7);border:2px solid rgba(255,255,255,.3);}
+  .btn-restart:hover{border-color:#fff;color:#fff;}
+  /* EFFECTS */
+  #effects-layer{position:fixed;inset:0;pointer-events:none;z-index:1000;}
+  #effects-layer .skip-popup,#effects-layer .hint-popup{pointer-events:all;}
+  .confetti-piece{position:absolute;opacity:0;animation:confetti-fall linear forwards;}
+  @keyframes confetti-fall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+  .wrong-overlay{position:fixed;inset:0;background:rgba(231,76,60,0);animation:wrong-flash 1s ease forwards;pointer-events:none;z-index:999;}
+  @keyframes wrong-flash{0%{background:rgba(231,76,60,0)}20%{background:rgba(231,76,60,.3)}40%{background:rgba(231,76,60,.1)}60%{background:rgba(231,76,60,.25)}80%{background:rgba(231,76,60,.05)}100%{background:rgba(231,76,60,0)}}
+  .timeout-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:998;animation:fadein .3s ease;}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .timeout-box{background:linear-gradient(135deg,#1a0000,#3d0000);border:3px solid #e74c3c;border-radius:20px;padding:36px 56px;text-align:center;box-shadow:0 0 60px rgba(231,76,60,.5);}
+  .timeout-icon{font-size:56px;}.timeout-text{font-size:34px;font-weight:700;color:#e74c3c;margin:8px 0;}.timeout-sub{color:rgba(255,255,255,.7);letter-spacing:2px;}
+  .slide-in{animation:slideIn .4s ease forwards;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  /* ── RESPONSIVIDADE MOBILE ── */
+  @media(max-width:600px){
+    body{overflow-y:auto;overflow-x:hidden;justify-content:flex-start;padding:0;}
+    .screen{padding:10px 8px;max-width:100%;min-height:100dvh;}
+    #start-screen{gap:16px;padding-top:24px;padding-bottom:24px;}
+    .logo-main{font-size:34px;letter-spacing:2px;}
+    .logo-sub{font-size:14px;letter-spacing:4px;}
+    .coin-icon{font-size:56px;}
+    .difficulty-selector{padding:16px 14px;}
+    .difficulty-selector h3{font-size:14px;margin-bottom:10px;}
+    .diff-btn{padding:8px 13px;font-size:12px;}
+    .start-btn{padding:14px 36px;font-size:20px;letter-spacing:2px;}
+    .stats-box{gap:16px;font-size:11px;flex-wrap:wrap;justify-content:center;}
+    .stats-box span{font-size:16px;}
+    #game-screen{gap:7px;padding:7px 7px 12px;}
+    .top-bar{flex-wrap:nowrap;gap:4px;}
+    .level-badge,.score-display{padding:5px 10px;}
+    .level-badge .level-num,.score-display .score-num{font-size:17px;}
+    .level-badge .level-label,.score-display .score-label{font-size:9px;}
+    .game-logo{font-size:13px;letter-spacing:1px;}
+    #mute-btn{font-size:13px;padding:2px 7px;}
+    .timer-circle{width:68px;height:68px;}
+    .timer-circle svg{width:68px;height:68px;}
+    .timer-number{font-size:22px;}
+    .timer-bar-wrapper{height:6px;}
+    .question-box{padding:14px 14px;}
+    .question-number{font-size:10px;}
+    .question-text{font-size:15px;line-height:1.45;}
+    .options-grid{grid-template-columns:1fr;gap:7px;}
+    .option-btn{padding:11px 13px;gap:10px;}
+    .option-num{width:30px;height:30px;font-size:15px;}
+    .option-text{font-size:13px;line-height:1.3;}
+    .lifelines-row{gap:7px;}
+    .lifeline-btn{min-width:0;flex:1;padding:8px 6px;border-radius:10px;}
+    .ll-icon{font-size:18px;}
+    .ll-label{font-size:9px;letter-spacing:1px;}
+    .ll-desc{display:none;}
+    .bottom-info{gap:6px;}
+    .info-pill{padding:7px 10px;font-size:10px;letter-spacing:1px;min-width:0;flex:1;}
+    .streak-bar{gap:6px;}
+    .streak-label{font-size:9px;}
+    .sdot{width:9px;height:9px;}
+    #result-screen{gap:12px;padding:20px 10px;}
+    .result-icon{font-size:56px;}
+    .result-title{font-size:28px;}
+    .result-subtitle{font-size:14px;}
+    .result-stats{grid-template-columns:1fr 1fr 1fr;gap:8px;}
+    .result-stat{padding:10px 6px;}
+    .result-stat .rs-num{font-size:22px;}
+    .result-stat .rs-label{font-size:9px;}
+    .result-answer-box{padding:12px 14px;}
+    .rab-text{font-size:14px;}
+    .action-btn{padding:11px 20px;font-size:15px;}
+    .hint-box{padding:24px 18px;max-width:96%;}
+    .hint-title{font-size:18px;}
+    .hint-text{font-size:14px;padding:12px 14px;}
+    .hint-icon{font-size:40px;}
+    .skip-box{padding:24px 16px;max-width:96%;}
+    .skip-title{font-size:18px;}
+    .skip-actions{gap:8px;}
+    .skip-yes,.skip-no{padding:10px 18px;font-size:13px;}
+    .timeout-box{padding:24px 28px;}
+    .timeout-icon{font-size:44px;}
+    .timeout-text{font-size:24px;}
+  }
+  @media(max-width:380px){
+    .logo-main{font-size:28px;}
+    .question-text{font-size:13px;}
+    .option-text{font-size:12px;}
+    .ll-label{font-size:8px;}
+    .result-stats{grid-template-columns:1fr 1fr;}
+    .action-buttons{flex-direction:column;align-items:center;}
+    .action-btn{width:100%;text-align:center;}
+  }
+</style>
+</head>
+<body>
+<div id="effects-layer"></div>
+
+<!-- START -->
+<div id="start-screen" class="screen active">
+  <div>
+    <span class="coin-icon">🛡️</span>
+    <div class="logo-main">QUIZ PM/MA</div>
+    <div class="logo-sub">OPERAÇÃO APROVAÇÃO</div>
+  </div>
+  <div class="difficulty-selector">
+    <h3>ESCOLHA A DIFICULDADE</h3>
+    <div class="diff-buttons">
+      <button class="diff-btn selected" data-diff="todos" onclick="selectDiff(this)">TODAS</button>
+      <button class="diff-btn" data-diff="facil" onclick="selectDiff(this)">FÁCIL</button>
+      <button class="diff-btn" data-diff="medio" onclick="selectDiff(this)">MÉDIO</button>
+      <button class="diff-btn" data-diff="dificil" onclick="selectDiff(this)">DIFÍCIL</button>
+    </div>
+  </div>
+  <button class="start-btn" onclick="startGame()">▶ JOGAR AGORA</button>
+  <div class="stats-box">
+    <div>📋 <span>∞</span><br>QUESTÕES</div>
+    <div>⏱️ <span>60s</span><br>POR QUESTÃO</div>
+    <div>🎁 <span>3</span><br>AJUDAS</div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="game-screen" class="screen">
+  <div class="progress-container"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="top-bar">
+    <div class="level-badge"><div class="level-label">NÍVEL</div><div class="level-num" id="level-display">1</div></div>
+    <div style="text-align:center">
+      <div class="game-logo">🛡️ Quiz PM/MA</div>
+      <div class="diff-indicator" id="diff-dots" style="justify-content:center;margin-top:4px;"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+      <div class="score-display"><div class="score-label">PONTOS</div><div class="score-num" id="score-display">0</div></div>
+      <button id="mute-btn" onclick="SFX.toggleMute()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#fff;font-size:15px;padding:3px 9px;cursor:pointer;font-family:inherit;">🔊</button>
+    </div>
+  </div>
+  <div class="timer-container">
+    <div class="timer-circle">
+      <svg width="86" height="86" viewBox="0 0 86 86">
+        <circle class="bg-c" cx="43" cy="43" r="38"/>
+        <circle class="prog-c" id="timer-svg" cx="43" cy="43" r="38"/>
+      </svg>
+      <div class="timer-number" id="timer-num">60</div>
+    </div>
+    <div class="timer-bar-wrapper"><div class="timer-bar" id="timer-bar"></div></div>
+  </div>
+  <div class="question-box" id="question-box">
+    <div class="question-number" id="q-number">QUESTÃO 1</div>
+    <div class="question-text" id="question-text">Carregando...</div>
+  </div>
+  <div class="options-grid" id="options-grid"></div>
+
+  <!-- AJUDAS -->
+  <div class="lifelines-row">
+    <button class="lifeline-btn" id="ll-elim" onclick="useLifeline('elim')">
+      <span class="ll-icon">✂️</span>
+      <span class="ll-label">ELIMINAR 2</span>
+      <span class="ll-desc">Retira 2 erradas</span>
+    </button>
+    <button class="lifeline-btn" id="ll-skip" onclick="useLifeline('skip')">
+      <span class="ll-icon">⏭️</span>
+      <span class="ll-label">PULAR</span>
+      <span class="ll-desc">Próx. pergunta</span>
+    </button>
+    <button class="lifeline-btn" id="ll-hint" onclick="useLifeline('hint')">
+      <span class="ll-icon">💡</span>
+      <span class="ll-label">DICA</span>
+      <span class="ll-desc">Dica do Estatuto</span>
+    </button>
+  </div>
+
+  <div class="streak-bar">
+    <span class="streak-label">SEQUÊNCIA</span>
+    <div style="display:flex;gap:5px;" id="streak-dots"></div>
+  </div>
+  <div class="bottom-info">
+    <div class="info-pill pill-errar">❌ ERRAR = 0 pts</div>
+    <div class="info-pill pill-parar" onclick="stopGame()">⏹ PARAR</div>
+    <div class="info-pill pill-acertar" id="pts-display">✅ ACERTAR</div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result-screen" class="screen">
+  <div class="result-icon" id="result-icon">🎉</div>
+  <div class="result-title" id="result-title">PARABÉNS!</div>
+  <div class="result-subtitle" id="result-subtitle">Você acertou!</div>
+  <div class="result-stats">
+    <div class="result-stat"><div class="rs-num" id="rs-total">0</div><div class="rs-label">Respondidas</div></div>
+    <div class="result-stat"><div class="rs-num" id="rs-correct">0</div><div class="rs-label">Acertos</div></div>
+    <div class="result-stat"><div class="rs-num" id="rs-score">0</div><div class="rs-label">Pontos</div></div>
+  </div>
+  <div class="result-answer-box" id="result-answer-box">
+    <div class="rab-label">RESPOSTA CORRETA</div>
+    <div class="rab-text" id="correct-answer-display"></div>
+  </div>
+  <div class="action-buttons">
+    <button class="action-btn btn-next" onclick="nextQuestion()">PRÓXIMA ▶</button>
+    <button class="action-btn btn-restart" onclick="restartGame()">↩ REINICIAR</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// SOUND ENGINE
+// ══════════════════════════════════════
+const SFX=(()=>{
+  let ctx=null,tickInt=null,muted=false;
+  const gc=()=>{if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx;};
+  const osc=(f,t,st,dur,g,eg=0,et=null)=>{const c=gc(),o=c.createOscillator(),gn=c.createGain();o.connect(gn);gn.connect(c.destination);o.type=t;o.frequency.setValueAtTime(f,st);gn.gain.setValueAtTime(g,st);gn.gain.linearRampToValueAtTime(eg,et??(st+dur));o.start(st);o.stop(et??(st+dur));};
+  const noise=(st,dur,g)=>{const c=gc(),bs=Math.ceil(c.sampleRate*dur),buf=c.createBuffer(1,bs,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<bs;i++)d[i]=Math.random()*2-1;const s=c.createBufferSource();s.buffer=buf;const gn=c.createGain(),f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=1200;f.Q.value=.5;s.connect(f);f.connect(gn);gn.connect(c.destination);gn.gain.setValueAtTime(g,st);gn.gain.exponentialRampToValueAtTime(.001,st+dur);s.start(st);s.stop(st+dur);};
+  return{
+    toggleMute(){muted=!muted;const b=document.getElementById('mute-btn');if(b)b.textContent=muted?'🔇':'🔊';},
+    startTick(){if(tickInt)clearInterval(tickInt);tickInt=setInterval(()=>{if(muted)return;const c=gc(),t=c.currentTime;noise(t,.04,.18);osc(2800,'square',t,.03,.06,0);},1000);},
+    stopTick(){if(tickInt){clearInterval(tickInt);tickInt=null;}},
+    urgentTick(){if(muted)return;const c=gc(),t=c.currentTime;noise(t,.035,.28);osc(3400,'square',t,.035,.09,0);noise(t+.05,.02,.09);},
+    applause(){if(muted)return;const c=gc(),t=c.currentTime;[523.25,659.25,783.99,1046.5].forEach((f,i)=>{osc(f,'sine',t+i*.12,.35,.22,0,t+i*.12+.35);osc(f*2,'sine',t+i*.12,.2,.06,0,t+i*.12+.2);});for(let i=0;i<12;i++){const d=t+.5+i*.08+Math.random()*.04;noise(d,.06+Math.random()*.04,.12+Math.random()*.08);}for(let i=0;i<10;i++){const d=t+1.5+i*.09+Math.random()*.05;noise(d,.05+Math.random()*.04,.08+Math.random()*.07);}[523.25,659.25,783.99].forEach(f=>osc(f,'sine',t+.55,.5,.15,0,t+1.05));},
+    wrong(){if(muted)return;const c=gc(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';o.frequency.setValueAtTime(380,t);o.frequency.exponentialRampToValueAtTime(80,t+.6);g.gain.setValueAtTime(.35,t);g.gain.linearRampToValueAtTime(0,t+.7);o.start(t);o.stop(t+.7);osc(60,'sine',t,.3,.4,0);},
+    timeout(){if(muted)return;const c=gc(),t=c.currentTime;[0,.3,.6].forEach(d=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';o.frequency.setValueAtTime(600,t+d);o.frequency.linearRampToValueAtTime(200,t+d+.25);g.gain.setValueAtTime(.25,t+d);g.gain.linearRampToValueAtTime(0,t+d+.28);o.start(t+d);o.stop(t+d+.3);});},
+    click(){if(muted)return;const c=gc(),t=c.currentTime;osc(880,'sine',t,.05,.12,0);},
+    lifeline(){if(muted)return;const c=gc(),t=c.currentTime;[440,554,659].forEach((f,i)=>osc(f,'sine',t+i*.08,.2,.15,0,t+i*.08+.2));},
+    start(){if(muted)return;const c=gc(),t=c.currentTime;[261.63,329.63,392,523.25].forEach((f,i)=>osc(f,'sine',t+i*.1,.25,.18,0,t+i*.1+.25));}
+  };
+})();
+
+// ══════════════════════════════════════
+// BANCO BASE — ESTATUTO PM/MA (Lei 6.513/1995 + MP 542/2026)
+// A IA gera lotes adicionais em tempo real
+// ══════════════════════════════════════
+const BASE_Q=[
+  // ── FÁCIL ──
+  {q:"Qual lei institui o Estatuto dos Policiais Militares do Maranhão?",o:["Lei 6.513/1993","Lei 6.513/1995","Lei 6.315/1995","Lei 7.855/2003"],a:1,d:"facil",h:"Promulgada em 30 de novembro de 1995."},
+  {q:"Qual é a missão principal da Polícia Militar do Maranhão?",o:["Investigação criminal","Policiamento ostensivo e preservação da ordem pública","Fiscalização de trânsito estadual","Controle de fronteiras"],a:1,d:"facil",h:"Art. 3º do Estatuto — missão constitucional da PM/MA."},
+  {q:"Qual é a sigla oficial da Polícia Militar do Maranhão?",o:["PMMА","PMMA","PMEM","PMMA-MA"],a:1,d:"facil",h:"Polícia Militar do Maranhão."},
+  {q:"O ingresso na PM/MA é facultado a todo brasileiro. Qual carreira exige brasileiro nato?",o:["Praças","Oficial","Saúde","Músico"],a:1,d:"facil",h:"Art. 4º §2º — carreira de Oficial é privativa de brasileiros natos."},
+  {q:"Qual é a idade máxima para inscrição no concurso de ingresso na PM/MA?",o:["25 anos","28 anos","30 anos","35 anos"],a:2,d:"facil",h:"Art. 9º, IV — até 30 anos na data-limite da inscrição."},
+  {q:"Qual é a altura mínima para candidatos masculinos na PM/MA?",o:["1,60 m","1,65 m","1,70 m","1,75 m"],a:1,d:"facil",h:"Art. 9º — 1,65 m para homens; 1,60 m para mulheres."},
+  {q:"Quais são os dois pilares fundamentais da PM/MA?",o:["Coragem e lealdade","Hierarquia e disciplina","Força e justiça","Ordem e progresso"],a:1,d:"facil",h:"Art. 17 — hierarquia e disciplina são as bases da corporação."},
+  {q:"Quantos dias de férias anuais o policial-militar tem direito?",o:["15 dias","20 dias","25 dias","30 dias"],a:3,d:"facil",h:"Art. 80 — 30 dias consecutivos por ano, após 12 meses de exercício."},
+  {q:"Quantos dias de afastamento por núpcias o policial tem direito?",o:["3 dias","5 dias","8 dias","15 dias"],a:2,d:"facil",h:"Art. 84, I — 8 dias, mesmo prazo do luto de cônjuge, pais, filhos e irmãos."},
+  {q:"É vedado ao policial-militar ativo filiar-se a partido político?",o:["Sim, é proibido","Não, é permitido","Só é proibido para praças","Só em horário de serviço"],a:0,d:"facil",h:"Art. 64 — vedação constitucional; PM na ativa não pode se filiar a partido."},
+  {q:"O policial-militar pode fazer greve?",o:["Sim, como qualquer trabalhador","Não, é vedado constitucionalmente","Sim, apenas praças","Apenas em caso extremo"],a:1,d:"facil",h:"Art. 142 §3º IV da CF — vedação constitucional para militares."},
+  {q:"Qual é a graduação inicial de quem ingressa na PM/MA como praça?",o:["Cabo","3º Sargento","Soldado","Subtenente"],a:2,d:"facil",h:"Soldado é a graduação base; a progressão segue para Cabo, Sargento etc."},
+  {q:"Qual é o posto inicial de quem conclui o Curso de Formação de Oficiais (CFO)?",o:["Aspirante-a-Oficial","2º Tenente","1º Tenente","Capitão"],a:1,d:"facil",h:"Art. 10 — declarado Aspirante ao concluir o CFO e depois promovido a 2º Tenente."},
+  {q:"Quantas vezes por ano ocorrem as promoções na PM/MA, conforme PL 002/2024?",o:["Uma vez","Duas vezes","Três vezes","Quatro vezes"],a:1,d:"facil",h:"PL 002/2024 — promoções em agosto e dezembro de cada ano."},
+  {q:"O policial-militar na reserva remunerada pode ser convocado de volta ao serviço ativo?",o:["Não, nunca","Sim, pode ser convocado","Apenas se for Oficial","Apenas por decisão judicial"],a:1,d:"facil",h:"Na reserva o militar para de servir mas pode ser chamado de volta."},
+  {q:"O policial-militar reformado pode ser convocado de volta ao serviço ativo?",o:["Sim, em qualquer situação","Sim, apenas em guerra","Não, a reforma é definitiva","Apenas se tiver menos de 60 anos"],a:2,d:"facil",h:"A reforma é o afastamento definitivo — não há convocação possível."},
+  {q:"Qual é a escolaridade mínima para ingresso na PM/MA pela regra geral do Estatuto?",o:["Ensino fundamental","Ensino médio completo","Ensino superior","Curso técnico"],a:1,d:"facil",h:"Art. 9º — certificado de conclusão do 2º grau (ensino médio)."},
+  {q:"Qual é o nome do curso de formação para o Quadro de Oficiais Combatentes?",o:["CFO","CFP","CFS","CHO"],a:0,d:"facil",h:"CFO — Curso de Formação de Oficiais, realizado na Academia de Polícia Militar."},
+  {q:"Qual artigo do Estatuto trata dos preceitos da ética policial-militar?",o:["Art. 17","Art. 39","Art. 40","Art. 62"],a:2,d:"facil",h:"Art. 40 — 17 preceitos de conduta, aplicáveis dentro e fora do serviço."},
+  {q:"A licença-gestante na PM/MA tem duração de quantos dias?",o:["90 dias","120 dias","180 dias","365 dias"],a:2,d:"facil",h:"Art. 98 — 180 dias com remuneração integral, incluindo adoção."},
+  {q:"Qual é o prazo de licença-paternidade previsto no Estatuto da PM/MA?",o:["3 dias","5 dias","8 dias","15 dias"],a:1,d:"facil",h:"Art. 99 — 5 dias consecutivos, prorrogável por 15 dias."},
+  {q:"A hierarquia deve ser respeitada em quais circunstâncias?",o:["Apenas no serviço","Apenas na presença de superiores","Em todas as circunstâncias, inclusive na inatividade","Apenas dentro das instalações militares"],a:2,d:"facil",h:"Art. 17 §1º — observada em todas as circunstâncias, inclusive na inatividade."},
+  {q:"O Estatuto da PM/MA usa como referência subsidiária qual regulamento?",o:["Código Penal Militar","Constituição Federal diretamente","Regulamentos do Exército Brasileiro","Regulamento Interno da PMMA"],a:2,d:"facil",h:"Art. 166 — regulamentos do Exército Brasileiro são usados nas lacunas da lei estadual."},
+  {q:"Qual é o nome da missão ostensiva realizada pela PM/MA?",o:["Investigação sigilosa","Patrulhamento com presença visível nas ruas","Trabalho exclusivamente interno","Apoio logístico federal"],a:1,d:"facil",h:"Art. 3º — ostensivo significa presença visível e fardada nas vias públicas."},
+  {q:"Qual instância decide a perda do posto e da patente de um oficial da PM/MA?",o:["Comandante-Geral","Secretário de Segurança","Tribunal de Justiça","Governador do Estado"],a:2,d:"facil",h:"A perda do posto e da patente de oficiais depende de decisão do Tribunal de Justiça."},
+  {q:"Qual é a missão constitucional da PM/MA prevista no Art. 3º do Estatuto?",o:["Só investigação","Policiamento ostensivo e preservação da ordem pública","Fiscalização de tributos","Controle de fronteiras"],a:1,d:"facil",h:"Art. 3º — policiamento ostensivo e preservação da ordem pública."},
+  {q:"Quantos títulos principais estruturam a Lei 6.513/1995?",o:["5 títulos","6 títulos","7 títulos","8 títulos"],a:2,d:"facil",h:"O Estatuto tem 7 títulos: do ingresso à reserva, cobrindo toda a vida funcional."},
+  // ── MÉDIO ──
+  {q:"Qual é o prazo mínimo de estágio para ingresso no Quadro de Oficiais de Saúde (QOS)?",o:["30 dias","60 dias","90 dias","180 dias"],a:2,d:"medio",h:"Art. 13 — mínimo 90 dias de estágio antes da nomeação como 1º Tenente PM."},
+  {q:"Com qual posto o profissional de saúde é nomeado ao ingressar no QOS?",o:["Aspirante-a-Oficial","2º Tenente","1º Tenente","Capitão"],a:2,d:"medio",h:"Art. 13 — médicos, dentistas, veterinários e psicólogos ingressam como 1º Tenente PM."},
+  {q:"Quantos anos de serviço são necessários para a policial feminina pedir reserva?",o:["20 anos","25 anos","30 anos","35 anos"],a:1,d:"medio",h:"Lei 13.954/2019 — feminino: 25 anos; masculino: 30 anos de tempo de serviço."},
+  {q:"Qual é a idade-limite para transferência compulsória à reserva do Coronel?",o:["60 anos","65 anos","67 anos","70 anos"],a:2,d:"medio",h:"Art. 120 — Coronel: 67 anos; demais postos de Oficial e Praças: 65 anos."},
+  {q:"Qual é a idade-limite para reforma do Coronel, Tenente-Coronel e Major da PM/MA?",o:["65 anos","68 anos","70 anos","72 anos"],a:3,d:"medio",h:"Art. 124 — Cel/TC/Major: 72 anos; demais Oficiais e Praças: 70 anos."},
+  {q:"O policial-militar agregado pode ser promovido?",o:["Sim, normalmente","Sim, apenas por bravura","Não, fica sem número na escala","Apenas por merecimento especial"],a:2,d:"medio",h:"Art. 106 — o agregado deixa de ocupar vaga na escala hierárquica."},
+  {q:"Após quantos anos como agregado ocorre a reversão automática ao quadro?",o:["1 ano","2 anos","3 anos","5 anos"],a:1,d:"medio",h:"Art. 109 — após 2 anos (contínuos ou não) de aggregação, a reversão é automática."},
+  {q:"Qual é o prazo máximo para licença de interesse particular?",o:["6 meses","1 ano","2 anos","3 anos"],a:2,d:"medio",h:"Art. 95 — máximo 2 anos; exige mais de 10 anos de serviço; com prejuízo de remuneração."},
+  {q:"Quantos anos de serviço são exigidos para requerer licença de interesse particular?",o:["5 anos","8 anos","10 anos","15 anos"],a:2,d:"medio",h:"Art. 95 — exige mais de 10 anos de efetivo serviço para ser concedida."},
+  {q:"Qual é o prazo máximo para licença de tratamento de saúde de familiar?",o:["3 meses","6 meses","1 ano","2 anos"],a:1,d:"medio",h:"Art. 94 — até 6 meses; integral nos 3 primeiros; acima de 3 meses sofre desconto de 1/3."},
+  {q:"A licença-prêmio na PM/MA é concedida a cada quantos anos de efetivo serviço?",o:["3 anos","4 anos","5 anos","10 anos"],a:2,d:"medio",h:"Art. 93 — 3 meses de licença-prêmio a cada quinquênio (5 anos) de efetivo serviço."},
+  {q:"Após quantas horas de ausência o policial é considerado 'ausente'?",o:["mais de 8 horas","mais de 12 horas","mais de 24 horas","mais de 48 horas"],a:2,d:"medio",h:"Art. 111 — ausência por mais de 24h sem comunicação gera a situação de 'ausente'."},
+  {q:"Qual é o período de graça antes de um policial ausente ser declarado desertor?",o:["3 dias","5 dias","8 dias","15 dias"],a:2,d:"medio",h:"Art. 144 — 8 dias de período de graça antes da declaração de deserção."},
+  {q:"Qual é o prazo máximo de pena de detenção ou prisão disciplinar na PM/MA?",o:["15 dias","20 dias","30 dias","60 dias"],a:2,d:"medio",h:"Art. 59 — máximo de 30 dias para detenção ou prisão disciplinar."},
+  {q:"Qual é o prazo para recurso contra inclusão no Quadro de Acesso?",o:["15 dias","30 dias","60 dias","120 dias"],a:1,d:"medio",h:"Art. 63 — 30 dias para quadro de acesso; 120 dias corridos para demais casos."},
+  {q:"Após quantos anos de efetivo serviço as praças adquirem estabilidade na PM/MA?",o:["3 anos","4 anos","5 anos","10 anos"],a:2,d:"medio",h:"Art. 62, III-a — 5 anos de efetivo serviço garantem estabilidade às praças."},
+  {q:"O que NÃO é computado como tempo de serviço na PM/MA?",o:["Período afastado por ferimento em serviço","Férias anuais","Licença para tratar de interesse particular","Afastamentos legais remunerados"],a:2,d:"medio",h:"Art. 149 — licença de interesse particular, deserção e pena restritiva não são computados."},
+  {q:"Quantos dias de afastamento o policial tem ao ser transferido para nova sede?",o:["10 dias","20 dias","até 30 dias","45 dias"],a:2,d:"medio",h:"Art. 84, III — afastamento para trânsito (mudança de sede): até 30 dias."},
+  {q:"Quantos dias de afastamento para instalação na nova OPM o policial tem direito?",o:["5 dias","até 10 dias","15 dias","até 20 dias"],a:1,d:"medio",h:"Art. 84, IV — afastamento para instalação (apresentação na nova OPM): até 10 dias."},
+  {q:"Qual é o critério de desempate final na antiguidade entre policiais militares?",o:["Tempo de serviço total","Data de promoção ao posto atual","Data de ingresso na corporação","Data de nascimento"],a:3,d:"medio",h:"Art. 20 e 21 — data de nascimento é o critério de desempate final na antiguidade."},
+  {q:"Para qual posto de Oficial a promoção é exclusivamente por merecimento?",o:["Major","Tenente-Coronel","Coronel","General"],a:2,d:"medio",h:"Art. 77 — a promoção a Coronel é exclusivamente por merecimento."},
+  {q:"Qual é o prazo máximo de aggregação antes da reforma por incapacidade definitiva?",o:["6 meses","1 ano","2 anos","3 anos"],a:1,d:"medio",h:"Art. 124 — aggregação por mais de 1 ano por incapacidade definitiva (Junta Superior de Saúde) leva à reforma."},
+  {q:"Qual o prazo para o Comandante-Geral apresentar o Plano de Comando (MP 542/2026)?",o:["30 dias","45 dias","60 dias","90 dias"],a:2,d:"medio",h:"Art. 9 da MP 542/2026 — 60 dias após a nomeação para apresentar o Plano de Comando."},
+  {q:"Pela MP 542/2026, qual é o tempo mínimo de permanência na área da 1ª classificação?",o:["1 ano","2 anos","3 anos","5 anos"],a:2,d:"medio",h:"Art. 95 da MP 542/2026 — mínimo 3 anos na área do primeiro Comando de Policiamento."},
+  {q:"Qual quadro criado pela MP 542/2026 é destinado a atividades religiosas na PMMA?",o:["Quadro de Assistência Social (QAS)","Quadro de Oficiais Capelães (QOC)","Quadro de Apoio Espiritual (QAE)","Quadro Religioso de Oficiais (QRO)"],a:1,d:"medio",h:"MP 542/2026 — QOC com progressão até Capitão, ingresso como 2º Tenente."},
+  {q:"Quantas leis e dispositivos foram expressamente revogados pela MP 542/2026?",o:["15","25","39","50"],a:2,d:"medio",h:"Art. 125 da MP 542/2026 — 39 leis e dispositivos legais revogados expressamente."},
+  {q:"Quantos tipos de licença o Estatuto da PM/MA prevê?",o:["4 tipos","5 tipos","6 tipos","8 tipos"],a:2,d:"medio",h:"Arts. 92–99 — 6 tipos: licença-prêmio, saúde familiar, interesse particular, saúde, gestante e paternidade."},
+  // ── DIFÍCIL ──
+  {q:"Qual artigo trata das manifestações essenciais do valor policial-militar?",o:["Art. 17","Art. 39","Art. 40","Art. 62"],a:1,d:"dificil",h:"Art. 39 — 6 manifestações essenciais do valor policial-militar."},
+  {q:"Qual inciso do art. 40 proíbe o policial-militar de servir como testemunha sem autorização?",o:["Inciso XIV","Inciso XV","Inciso XVI","Inciso XVII"],a:3,d:"dificil",h:"Art. 40, XVII — vedação de servir como testemunha sem autorização."},
+  {q:"Em que situação o extravio de policial desaparecido pode ser considerado falecimento?",o:["Após 30 dias","Em naufrágio, sinistro aéreo, catástrofe ou calamidade, esgotado o prazo de sobrevivência","Após decisão judicial","Nunca"],a:1,d:"dificil",h:"Arts. 113–114 — exceção específica para catástrofes quando esgotados os prazos de sobrevivência."},
+  {q:"O prazo para exclusão por extravio após aggregação é de:",o:["3 meses","6 meses","1 ano","2 anos"],a:1,d:"dificil",h:"Art. 146 — exclusão por extravio ocorre 6 meses após a aggregação decorrente do IPM."},
+  {q:"Qual é o prazo para providenciar curador ao reformado por alienação mental?",o:["30 dias","45 dias","60 dias","90 dias"],a:2,d:"dificil",h:"Art. 132 — 60 dias para que os responsáveis providenciem curador ao reformado por alienação mental."},
+  {q:"Qual é a complementação remuneratória do Subcomandante-Geral (MP 542/2026)?",o:["30% da diferença","40% da diferença","50% da diferença","60% da diferença"],a:2,d:"dificil",h:"Art. 13 da MP 542/2026 — Subcomandante-Geral: 50%; Chefe EMG e Corregedor-Geral: 40%."},
+  {q:"Qual é a complementação do Chefe do Estado-Maior Geral (MP 542/2026)?",o:["30% da diferença","40% da diferença","50% da diferença","Igual ao Subcomandante"],a:1,d:"dificil",h:"Art. 13 da MP 542/2026 — Chefe do EMG e Corregedor-Geral: 40% da diferença do Comandante-Geral."},
+  {q:"Quais qualificações do Quadro de Praças foram extintas pela MP 542/2026?",o:["QPMP 0, 1, 2, 3","QPMP 1, 3, 5 e 6","QPMP 2, 4, 6 e 8","Todas as qualificações"],a:1,d:"dificil",h:"MP 542/2026 — QPMP 1, 3, 5 e 6 extintas com prazo de opção de 180 dias."},
+  {q:"Quem assina os atos de promoção de praças no novo fluxo da MP 542/2026?",o:["Secretário de Segurança","Governador do Estado","Comandante-Geral","Ministro da Defesa"],a:2,d:"dificil",h:"Art. 123 MP 542/2026 — praças: Secretário devolve ao Comandante-Geral para assinatura. Oficiais vão ao Governador."},
+  {q:"Qual é o requisito de escolaridade para o novo Quadro de Praças (QP) criado pela MP 542/2026?",o:["Ensino médio","Ensino técnico","Nível superior (graduação)","Pós-graduação"],a:2,d:"dificil",h:"Art. 101 da MP 542/2026 — novo QP exige graduação superior, elevando o padrão anterior."},
+  {q:"Qual é o posto máximo de progressão no Quadro de Oficiais Capelães (QOC)?",o:["Tenente","Capitão","Major","Tenente-Coronel"],a:1,d:"dificil",h:"MP 542/2026 — QOC progride até Capitão, diferenciando-se dos demais quadros."},
+  {q:"A remuneração do Comandante-Geral da PMMA é equivalente a qual cargo (MP 542/2026)?",o:["Subsecretário de Estado","Secretário de Estado","Governador","Delegado-Geral"],a:1,d:"dificil",h:"Art. 18 da MP 542/2026 — remuneração do Comandante-Geral equivale à de Secretário de Estado."},
+  {q:"O Plano de Comando do Comandante-Geral deve incluir obrigatoriamente:",o:["Apenas metas de criminalidade","Diagnóstico de RH, metas, programas de capacitação e previsão de unidades","Relatório de contas públicas","Apenas lista de promoções"],a:1,d:"dificil",h:"Art. 9 da MP 542/2026 — o Plano de Comando tem componentes obrigatórios definidos em lei."},
+  {q:"Qual é o prazo de opção para militares das qualificações extintas migrarem para o novo QP?",o:["90 dias","120 dias","180 dias","365 dias"],a:2,d:"dificil",h:"MP 542/2026 — 180 dias de prazo para opção pelas qualificações QPMP extintas (1, 3, 5 e 6)."},
+  {q:"Quem pode autorizar movimentação antes dos 3 anos na área da 1ª classificação?",o:["Comandante-Geral por ato próprio","Secretário de Segurança","Governador, mediante justificativa do Comandante-Geral","Assembleia Legislativa"],a:2,d:"dificil",h:"Art. 95 da MP 542/2026 — requer justificativa do Comandante-Geral e autorização do Governador."},
+  {q:"O relatório anual do Comandante-Geral (MP 542/2026) deve conter dados sobre:",o:["Apenas efetivo e folha","Letalidade policial, vitimização de civis, ocorrências e orçamento","Apenas promoções e punições","Exclusivamente armamento e equipamento"],a:1,d:"dificil",h:"Art. 10 da MP 542/2026 — publicação anual obrigatória com dados de letalidade, vitimização, ocorrências e orçamento."},
+  {q:"A complementação remuneratória dos cargos de direção (MP 542/2026) tem contribuição previdenciária?",o:["Sim, como qualquer parcela","Não, é isenta","Apenas para Oficiais","Apenas acima de 50%"],a:1,d:"dificil",h:"Art. 13 da MP 542/2026 — as complementações NÃO têm incidência de contribuição previdenciária."},
+  {q:"Qual artigo lista as 9 formas de desligamento do serviço ativo na PM/MA?",o:["Art. 106","Art. 113","Art. 115","Art. 124"],a:2,d:"dificil",h:"Art. 115 — 9 formas: reserva, demissão, reforma, perda de posto, licenciamento, exclusão, deserção, falecimento e extravio."},
+  {q:"Qual é o prazo de transição de 'desaparecido' para 'extraviado' segundo o Estatuto?",o:["8 dias desaparecido → 15 dias extraviado","8 dias desaparecido → 30 dias extraviado","24h ausente → 8 dias desaparecido","30 dias desaparecido → 60 dias extraviado"],a:1,d:"dificil",h:"Arts. 113–114 — 8 dias desaparecido antes de ser declarado extraviado; 30 dias de extraviado antes do IPM."},
+];
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let ST={
+  questions:[],currentIndex:0,score:0,totalAnswered:0,totalCorrect:0,
+  streak:0,maxStreak:0,difficulty:'todos',timerInterval:null,timeLeft:60,
+  answerLocked:false,currentQuestion:null,level:1,questionsPerLevel:10,
+  usedQuestions:new Set(),
+  lifelines:{elim:true,skip:true,hint:true},
+  eliminatedIdx:[],
+  apiQueue:[],isFetching:false,
+};
+
+function selectDiff(btn){
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  ST.difficulty=btn.dataset.diff;
+}
+
+function startGame(){
+  ST.questions=shuffle([...BASE_Q]);
+  if(ST.difficulty!=='todos') ST.questions=ST.questions.filter(q=>q.d===ST.difficulty);
+  ST.currentIndex=0;ST.score=0;ST.totalAnswered=0;ST.totalCorrect=0;
+  ST.streak=0;ST.level=1;ST.usedQuestions=new Set();
+  ST.lifelines={elim:true,skip:true,hint:true};
+  ST.apiQueue=[];ST.isFetching=false;
+  updateLifelineUI();
+  showScreen('game-screen');
+  SFX.start();
+  loadQuestion();
+  setTimeout(()=>prefetchBatch(),4000);
+}
+
+async function loadQuestion(){
+  ST.answerLocked=false;ST.eliminatedIdx=[];
+  clearTimer();
+  ST.level=Math.floor(ST.totalAnswered/ST.questionsPerLevel)+1;
+  document.getElementById('level-display').textContent=ST.level;
+  document.getElementById('score-display').textContent=ST.score;
+  document.getElementById('pts-display').textContent=`✅ +${getPoints()} pts`;
+  document.getElementById('progress-fill').style.width=Math.min((ST.totalAnswered/10000)*100,100)+'%';
+  renderDiffDots();renderStreakDots();updateLifelineUI();
+
+  let q=getNextQ();
+  if(!q&&ST.apiQueue.length>0) q=ST.apiQueue.shift();
+  if(!q) q=await fetchOneFromAPI();
+  if(!q){
+    ST.questions=shuffle([...BASE_Q]);
+    if(ST.difficulty!=='todos') ST.questions=ST.questions.filter(q2=>q2.d===ST.difficulty);
+    ST.currentIndex=0;q=ST.questions[ST.currentIndex++];
+  }
+  ST.currentQuestion=q;
+  renderQuestion(q);startTimer();
+  if(ST.apiQueue.length<4&&!ST.isFetching) prefetchBatch();
+}
+
+function getNextQ(){
+  while(ST.currentIndex<ST.questions.length){
+    const q=ST.questions[ST.currentIndex++];
+    const k=q.q.substring(0,35);
+    if(!ST.usedQuestions.has(k)){ST.usedQuestions.add(k);return q;}
+  }
+  return null;
+}
+
+async function prefetchBatch(){
+  if(ST.isFetching)return;ST.isFetching=true;
+  const diffMap={todos:'variados (mix de dificuldades)',facil:'fáceis',medio:'médios',dificil:'difíceis'};
+  const lvl=ST.level;
+  const prompt=`Gere 6 perguntas de quiz sobre o Estatuto dos Policiais Militares do Maranhão (Lei 6.513/1995) e a Medida Provisória 542/2026, com dificuldade ${diffMap[ST.difficulty]||'variada'} (nível ${lvl>=5?'difícil':lvl>=3?'médio':'fácil'}).
+Temas: hierarquia, ingresso, promoções, licenças, prazos, direitos, deveres, disciplina, situações especiais, mudanças da MP 542/2026 (novos quadros, idades-limite, remuneração, plano de comando).
+Responda APENAS com array JSON sem markdown:
+[{"q":"pergunta?","o":["A","B","C","D"],"a":0,"d":"facil","h":"dica com artigo do estatuto em até 12 palavras"},...]
+"a" é índice da correta (0-3). "d" é facil/medio/dificil. Varie os temas a cada chamada.`;
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1800,messages:[{role:"user",content:prompt}]})});
+    const data=await r.json();
+    const text=data.content?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const arr=JSON.parse(clean);
+    if(Array.isArray(arr)){
+      arr.filter(q=>q.q&&Array.isArray(q.o)&&q.o.length===4&&q.a!==undefined)
+         .forEach(q=>{const k=q.q.substring(0,35);if(!ST.usedQuestions.has(k))ST.apiQueue.push(q);});
+    }
+  }catch(e){}
+  ST.isFetching=false;
+}
+
+async function fetchOneFromAPI(){
+  const diffMap={todos:'variada',facil:'fácil',medio:'médio',dificil:'difícil'};
+  const prompt=`Gere 1 pergunta de quiz sobre o Estatuto PM/MA (Lei 6.513/1995) ou MP 542/2026, dificuldade ${diffMap[ST.difficulty]||'variada'} nível ${ST.level>=5?'difícil':ST.level>=3?'médio':'fácil'}.
+JSON apenas: {"q":"pergunta?","o":["A","B","C","D"],"a":0,"d":"facil","h":"dica com artigo em até 12 palavras"}`;
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:350,messages:[{role:"user",content:prompt}]})});
+    const data=await r.json();
+    const text=data.content?.[0]?.text||'';
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    if(parsed.q&&Array.isArray(parsed.o)&&parsed.o.length===4&&parsed.a!==undefined)return parsed;
+  }catch(e){}
+  return null;
+}
+
+function renderQuestion(q){
+  document.getElementById('q-number').textContent=`QUESTÃO ${ST.totalAnswered+1}`;
+  document.getElementById('question-text').textContent=q.q;
+  const grid=document.getElementById('options-grid');
+  grid.innerHTML='';
+  q.o.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn'+(ST.eliminatedIdx.includes(i)?' eliminated':'');
+    btn.dataset.index=i;
+    btn.innerHTML=`<div class="option-num">${i+1}</div><div class="option-text">${opt}</div>`;
+    btn.onclick=()=>{SFX.click();answerQuestion(i,btn,q);};
+    btn.addEventListener('touchstart',()=>{btn.blur();},{passive:true});
+    grid.appendChild(btn);
+  });
+  document.getElementById('question-box').classList.add('slide-in');
+  setTimeout(()=>document.getElementById('question-box').classList.remove('slide-in'),400);
+  if(document.activeElement&&document.activeElement!==document.body)document.activeElement.blur();
+}
+
+function answerQuestion(index,btn,q){
+  if(ST.answerLocked||btn.classList.contains('eliminated'))return;
+  ST.answerLocked=true;clearTimer();ST.totalAnswered++;
+  const correct=q.a;
+  const allBtns=document.querySelectorAll('.option-btn');
+  allBtns.forEach(b=>b.disabled=true);
+  if(index===correct){
+    btn.classList.add('correct');
+    ST.totalCorrect++;ST.streak++;
+    if(ST.streak>ST.maxStreak)ST.maxStreak=ST.streak;
+    ST.score+=getPoints();
+    renderStreakDots();SFX.stopTick();SFX.applause();
+    setTimeout(()=>launchConfetti(),200);
+    setTimeout(()=>showResult(true,q),1600);
+  }else{
+    btn.classList.add('wrong');
+    allBtns[correct].classList.add('correct');
+    ST.streak=0;renderStreakDots();
+    SFX.stopTick();SFX.wrong();
+    setTimeout(()=>launchWrongEffect(),100);
+    setTimeout(()=>showResult(false,q),1600);
+  }
+}
+
+function timeUp(){
+  if(ST.answerLocked)return;
+  ST.answerLocked=true;ST.totalAnswered++;ST.streak=0;renderStreakDots();
+  SFX.stopTick();SFX.timeout();
+  const allBtns=document.querySelectorAll('.option-btn');
+  allBtns.forEach(b=>b.disabled=true);
+  allBtns[ST.currentQuestion.a].classList.add('correct');
+  showTimeoutEffect();
+  setTimeout(()=>showResult(false,ST.currentQuestion,true),2200);
+}
+
+function showResult(correct,q,timeout=false){
+  clearTimeout(window._tot);
+  const ov=document.querySelector('.timeout-overlay');if(ov)ov.remove();
+  document.getElementById('result-icon').textContent=correct?'🎉':(timeout?'⏰':'❌');
+  document.getElementById('result-title').textContent=correct?'CORRETO!':(timeout?'TEMPO ESGOTADO!':'ERROU!');
+  document.getElementById('result-subtitle').textContent=correct?`+${getPoints()} pontos!`:(timeout?'O tempo acabou!':'Não foi dessa vez...');
+  document.getElementById('rs-total').textContent=ST.totalAnswered;
+  document.getElementById('rs-correct').textContent=ST.totalCorrect;
+  document.getElementById('rs-score').textContent=ST.score;
+  const ab=document.getElementById('result-answer-box');
+  ab.style.display='';ab.className='result-answer-box'+(correct?'':' wrong-box');
+  document.getElementById('correct-answer-display').textContent=q.o[q.a];
+  showScreen('result-screen');
+}
+
+function nextQuestion(){showScreen('game-screen');loadQuestion();}
+function stopGame(){if(confirm('Deseja parar e ver sua pontuação final?')){clearTimer();showFinalScreen();}}
+function showFinalScreen(){
+  document.getElementById('result-icon').textContent='🏆';
+  document.getElementById('result-title').textContent='JOGO ENCERRADO!';
+  document.getElementById('result-subtitle').textContent='Você escolheu parar.';
+  document.getElementById('rs-total').textContent=ST.totalAnswered;
+  document.getElementById('rs-correct').textContent=ST.totalCorrect;
+  document.getElementById('rs-score').textContent=ST.score;
+  document.getElementById('result-answer-box').style.display='none';
+  showScreen('result-screen');
+}
+function restartGame(){document.getElementById('result-answer-box').style.display='';showScreen('start-screen');}
+
+// ══════════════════════════════════════
+// LIFELINES
+// ══════════════════════════════════════
+function useLifeline(type){
+  if(ST.answerLocked||!ST.lifelines[type])return;
+  ST.lifelines[type]=false;
+  updateLifelineUI();
+  SFX.lifeline();
+  if(type==='elim') doEliminate();
+  else if(type==='skip') doSkip();
+  else doHint();
+}
+
+function doEliminate(){
+  const q=ST.currentQuestion,correct=q.a;
+  const wrong=[];
+  for(let i=0;i<4;i++) if(i!==correct&&!ST.eliminatedIdx.includes(i))wrong.push(i);
+  shuffle(wrong);
+  const toElim=wrong.slice(0,2);
+  ST.eliminatedIdx.push(...toElim);
+  const allBtns=document.querySelectorAll('.option-btn');
+  toElim.forEach(idx=>{
+    const btn=allBtns[idx];
+    btn.style.transition='all .35s ease';
+    btn.style.opacity='0';btn.style.transform='scale(.92)';
+    setTimeout(()=>{btn.classList.add('eliminated');btn.style.opacity='';btn.style.transform='';},350);
+  });
+}
+
+function doSkip(){
+  const popup=document.createElement('div');
+  popup.className='skip-popup';
+  popup.innerHTML=`<div class="skip-box">
+    <div class="skip-icon">&#x23ED;&#xFE0F;</div>
+    <div class="skip-title">PULAR PERGUNTA</div>
+    <div class="skip-sub">Quer pular esta pergunta sem penalidade?</div>
+    <div class="skip-actions">
+      <button class="skip-yes">SIM, PULAR &#x25B6;</button>
+      <button class="skip-no">CANCELAR</button>
+    </div>
+  </div>`;
+  popup.addEventListener('click',e=>e.stopPropagation());
+  popup.addEventListener('touchend',e=>e.stopPropagation());
+  popup.querySelector('.skip-yes').addEventListener('click',e=>{e.stopPropagation();confirmSkip();});
+  popup.querySelector('.skip-no').addEventListener('click',e=>{e.stopPropagation();cancelSkip();});
+  document.getElementById('effects-layer').appendChild(popup);
+}
+
+function confirmSkip(){
+  document.querySelector('.skip-popup')?.remove();
+  clearTimer();SFX.stopTick();
+  loadQuestion();
+}
+function cancelSkip(){
+  document.querySelector('.skip-popup')?.remove();
+  ST.lifelines.skip=true;updateLifelineUI();
+}
+
+function doHint(){
+  const q=ST.currentQuestion;
+  const hint=q.h||'Consulte o Estatuto da PM/MA (Lei 6.513/1995) ou a MP 542/2026.';
+  const popup=document.createElement('div');
+  popup.className='hint-popup';
+  popup.innerHTML=`<div class="hint-box">
+    <div class="hint-icon">&#x1F4A1;</div>
+    <div class="hint-title">BIZU DO MIKE</div>
+    <div class="hint-text">${hint}</div>
+    <button class="hint-close">ENTENDIDO &#x2713;</button>
+  </div>`;
+  popup.addEventListener('click',e=>e.stopPropagation());
+  popup.addEventListener('touchend',e=>e.stopPropagation());
+  popup.querySelector('.hint-close').addEventListener('click',e=>{e.stopPropagation();popup.remove();});
+  document.getElementById('effects-layer').appendChild(popup);
+}
+
+function updateLifelineUI(){
+  ['elim','skip','hint'].forEach(type=>{
+    const btn=document.getElementById(`ll-${type}`);
+    if(!btn)return;
+    if(!ST.lifelines[type]){btn.classList.add('used');btn.disabled=true;}
+    else{btn.classList.remove('used');btn.disabled=false;}
+  });
+}
+
+// ══════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════
+function startTimer(){
+  ST.timeLeft=60;updateTimerUI();SFX.startTick();
+  ST.timerInterval=setInterval(()=>{
+    ST.timeLeft--;updateTimerUI();
+    if(ST.timeLeft<=10&&ST.timeLeft>0)SFX.urgentTick();
+    if(ST.timeLeft<=0){clearTimer();timeUp();}
+  },1000);
+}
+function clearTimer(){
+  SFX.stopTick();
+  if(ST.timerInterval){clearInterval(ST.timerInterval);ST.timerInterval=null;}
+}
+function updateTimerUI(){
+  const t=ST.timeLeft;
+  document.getElementById('timer-num').textContent=t;
+  document.getElementById('timer-bar').style.width=(t/60*100)+'%';
+  const circle=document.getElementById('timer-svg');
+  const C=2*Math.PI*38;
+  circle.style.strokeDasharray=C;
+  circle.style.strokeDashoffset=C-(t/60)*C;
+  const numEl=document.getElementById('timer-num');
+  if(t<=10){circle.style.stroke='#e74c3c';numEl.style.color='#e74c3c';numEl.style.animation=t<=5?'pulse-glow .5s infinite':'';}
+  else if(t<=20){circle.style.stroke='#f39c12';numEl.style.color='#f39c12';numEl.style.animation='';}
+  else{circle.style.stroke='var(--gold)';numEl.style.color='var(--gold)';numEl.style.animation='';}
+}
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function getPoints(){
+  const base={facil:100,medio:200,dificil:400};
+  const diff=ST.currentQuestion?.d||'facil';
+  return (base[diff]||100)+(ST.level*10)+(ST.streak>2?ST.streak*20:0)+Math.floor(ST.timeLeft*2);
+}
+function renderDiffDots(){
+  const c=document.getElementById('diff-dots');c.innerHTML='';
+  const lv=((ST.level-1)%3)+1;
+  for(let i=1;i<=3;i++){const d=document.createElement('div');d.className='diff-dot'+(i<=lv?' active'+(i===3?' hard':i===2?' med':''):'');c.appendChild(d);}
+}
+function renderStreakDots(){
+  const c=document.getElementById('streak-dots');c.innerHTML='';
+  if(ST.streak>=5){c.innerHTML=`<span style="color:var(--gold);font-size:12px;letter-spacing:1px">🔥 ${ST.streak}x SEQUÊNCIA!</span>`;return;}
+  for(let i=0;i<5;i++){const d=document.createElement('div');d.className='sdot'+(i<ST.streak?' lit':'');c.appendChild(d);}
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='game-screen')updateLifelineUI();
+}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+// ══════════════════════════════════════
+// EFFECTS
+// ══════════════════════════════════════
+function launchConfetti(){
+  const layer=document.getElementById('effects-layer');
+  const colors=['#f5c518','#27ae60','#3498db','#e74c3c','#9b59b6','#1abc9c','#ffffff','#f39c12'];
+  const shapes=['■','●','▲','★','♦'];
+  for(let i=0;i<80;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    const shape=shapes[Math.floor(Math.random()*shapes.length)];
+    const size=Math.random()*12+8,left=Math.random()*100;
+    const dur=Math.random()*2+1.5,delay=Math.random()*.8;
+    p.style.cssText=`left:${left}%;top:-20px;font-size:${size}px;color:${color};width:auto;height:auto;background:none;animation-duration:${dur}s;animation-delay:${delay}s;text-shadow:0 0 6px ${color};`;
+    p.textContent=shape;layer.appendChild(p);
+    setTimeout(()=>p.remove(),(dur+delay)*1000+100);
+  }
+}
+function launchWrongEffect(){
+  const layer=document.getElementById('effects-layer');
+  const ov=document.createElement('div');ov.className='wrong-overlay';layer.appendChild(ov);
+  for(let i=0;i<6;i++){
+    const b=document.createElement('div');
+    b.style.cssText=`position:absolute;font-size:${Math.random()*30+20}px;left:${Math.random()*90}%;top:${Math.random()*80}%;animation:bolt-fade .8s ease forwards;animation-delay:${Math.random()*.4}s;opacity:0;`;
+    b.textContent='⚡';layer.appendChild(b);setTimeout(()=>b.remove(),1200);
+  }
+  if(!document.getElementById('bolt-style')){
+    const s=document.createElement('style');s.id='bolt-style';
+    s.textContent='@keyframes bolt-fade{0%{transform:scale(0) rotate(-20deg);opacity:0}30%{transform:scale(1.3) rotate(0);opacity:1}100%{transform:scale(.8) rotate(10deg);opacity:0}}';
+    document.head.appendChild(s);
+  }
+  setTimeout(()=>ov.remove(),1000);
+}
+function showTimeoutEffect(){
+  const layer=document.getElementById('effects-layer');
+  const box=document.createElement('div');box.className='timeout-overlay';
+  box.innerHTML=`<div class="timeout-box"><div class="timeout-icon">⏰</div><div class="timeout-text">TEMPO ESGOTADO!</div><div class="timeout-sub">O TEMPO ACABOU</div></div>`;
+  layer.appendChild(box);
+  window._tot=setTimeout(()=>box.remove(),2100);
+}
+
+showScreen('start-screen');
+</script>
+</body>
+</html>
